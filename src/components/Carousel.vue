@@ -8,10 +8,12 @@
     <div ref="carouselContainer" style="display: flex; height: 100%;">
       <!-- 轮播图片 -->
       <div v-for="(slide, index) in slides" :key="index" 
-           style="width: 100%; height: 100%; flex-shrink: 0;" :style="{ backgroundColor: slide.color }">
-        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
-          轮播图 {{ index + 1 }}
-        </div>
+           style="width: 100%; height: 100%; flex-shrink: 0;">
+        <img 
+          :src="slide.image" 
+          alt="轮播图 {{ index + 1 }}" 
+          style="width: 100%; height: 100%; object-fit: cover;"
+        />
       </div>
     </div>
 
@@ -56,13 +58,17 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 
+// 轮播图数据类型定义
+interface Slide {
+  image: string;
+}
+
 // 轮播图数据
-const slides = ref([
-  { color: '#3B82F6', image: '' }, // 蓝色
-  { color: '#10B981', image: '' }, // 绿色
-  { color: '#F59E0B', image: '' }, // 橙色
-  { color: '#EC4899', image: '' }  // 粉色
-]);
+const slides = ref<Slide[]>([]);
+// 加载状态
+const isLoading = ref(true);
+// 错误信息
+const error = ref<string | null>(null);
 
 // 当前轮播图索引
 const currentIndex = ref(0);
@@ -78,9 +84,43 @@ const touchStartX = ref(0);
 const touchEndX = ref(0);
 const minSwipeDistance = 50; // 最小滑动距离，小于这个值不触发翻页
 
+// 从API获取轮播图数据
+const fetchCarouselData = async () => {
+  try {
+    isLoading.value = true;
+    error.value = null;
+    
+    const response = await fetch('/api/carousel');
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch carousel data');
+    }
+    
+    const result = await response.json();
+    
+    if (result.code === 200) {
+      slides.value = result.data;
+    } else {
+      throw new Error(result.message || 'Failed to fetch carousel data');
+    }
+  } catch (err) {
+    console.error('Error fetching carousel data:', err);
+    error.value = err instanceof Error ? err.message : 'Failed to fetch carousel data';
+    // 加载失败时使用默认图片
+    slides.value = [
+      { image: 'https://game.gtimg.cn/images/shanhai/web202006/s3_carousel1.jpg' },
+      { image: 'https://game.gtimg.cn/images/shanhai/web202006/s3_carousel2.jpg' },
+      { image: 'https://game.gtimg.cn/images/shanhai/web202006/s3_carousel4.jpg' },
+      { image: 'https://game.gtimg.cn/images/shanhai/web202006/s3_carousel5.jpg' }
+    ];
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 // 更新轮播图位置
 const updateCarouselPosition = () => {
-  if (carouselContainer.value) {
+  if (carouselContainer.value && slides.value.length > 0) {
     carouselContainer.value.style.transform = `translateX(-${currentIndex.value * 100}%)`;
     carouselContainer.value.style.transition = 'transform 0.5s ease';
   }
@@ -88,6 +128,7 @@ const updateCarouselPosition = () => {
 
 // 切换到下一张
 const nextSlide = () => {
+  if (slides.value.length === 0) return;
   currentIndex.value = (currentIndex.value + 1) % slides.value.length;
   updateCarouselPosition();
   resetTimer();
@@ -95,6 +136,7 @@ const nextSlide = () => {
 
 // 切换到上一张
 const prevSlide = () => {
+  if (slides.value.length === 0) return;
   currentIndex.value = (currentIndex.value - 1 + slides.value.length) % slides.value.length;
   updateCarouselPosition();
   resetTimer();
@@ -102,6 +144,7 @@ const prevSlide = () => {
 
 // 跳转到指定轮播图
 const goToSlide = (index: number) => {
+  if (slides.value.length === 0) return;
   currentIndex.value = index;
   updateCarouselPosition();
   resetTimer();
@@ -109,6 +152,7 @@ const goToSlide = (index: number) => {
 
 // 启动自动轮播
 const startAutoPlay = () => {
+  if (slides.value.length === 0) return;
   carouselTimer = window.setInterval(() => {
     nextSlide();
   }, carouselInterval);
@@ -123,7 +167,8 @@ const resetTimer = () => {
 };
 
 // 组件挂载时
-onMounted(() => {
+onMounted(async () => {
+  await fetchCarouselData();
   startAutoPlay();
   updateCarouselPosition(); // 初始化位置
 });
