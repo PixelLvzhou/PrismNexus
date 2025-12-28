@@ -1,5 +1,5 @@
 // 微信支付mock数据
-import { MockMethod } from "vite-plugin-mock";
+import type { MockMethod } from "vite-plugin-mock";
 
 export default [
   {
@@ -24,7 +24,7 @@ export default [
   {
     url: "/api/pay/query",
     method: "get",
-    response: ({ query }) => {
+    response: ({ query }: { query: Record<string, string> }) => {
       // 模拟微信支付查询接口
       const { out_trade_no } = query;
       return {

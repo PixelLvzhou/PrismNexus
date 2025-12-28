@@ -109,9 +109,9 @@ const initScene = () => {
 
     // 树冠（3层）
     for (let i = 0; i < 3; i++) {
-      const树冠Radius = height * 0.4 * (1 - i * 0.2);
-      const树冠Height = height * 0.3;
-      const树冠Geometry = new THREE.ConeGeometry(树冠Radius, 树冠Height, 8);
+      const 树冠Radius = height * 0.4 * (1 - i * 0.2);
+      const 树冠Height = height * 0.3;
+      const 树冠Geometry = new THREE.ConeGeometry(树冠Radius, 树冠Height, 8);
       const 树冠Material = new THREE.MeshPhongMaterial({ color: 0x006400 });
       const 树冠 = new THREE.Mesh(树冠Geometry, 树冠Material);
       树冠.position.set(x, height * 0.6 + i * 树冠Height * 0.7, z);

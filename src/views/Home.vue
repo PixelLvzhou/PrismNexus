@@ -31,12 +31,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
 import Carousel from '../components/Carousel.vue';
 import Map from '../components/Map.vue';
 import EquipmentArea from '../components/EquipmentArea.vue';
-
-const router = useRouter();
 
 // 下拉刷新相关状态
 const isRefreshing = ref(false);
@@ -269,7 +266,6 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-<style>
 /* 全局样式重置 */
 * {
   margin: 0;
