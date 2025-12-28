@@ -22,10 +22,7 @@
       <button class="pay-button" @click="handlePay">微信支付</button>
     </div>
 
-    <!-- 3D场景按钮 -->
-    <div class="pay-button-container">
-      <button class="pay-button 3d-btn" @click="goTo3DScene">3D场景</button>
-    </div>
+    
 
     <!-- 功能按钮组件 -->
     <FunctionButtons v-if="false" />
@@ -149,11 +146,6 @@ onMounted(() => {
   }
 });
 
-// 跳转到3D场景
-const goTo3DScene = () => {
-  router.push('/3d-scene');
-};
-
 // 支付按钮点击事件
 const handlePay = async () => {
   try {
@@ -275,21 +267,6 @@ onUnmounted(() => {
 .pay-button:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* 3D场景按钮样式 */
-.pay-button.3d-btn {
-  background-color: #4a90e2;
-}
-
-.pay-button.3d-btn:hover {
-  background-color: #357abd;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
-}
-
-.pay-button.3d-btn:active {
-  transform: translateY(0);
 }
 
 <style>
