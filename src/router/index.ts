@@ -3,10 +3,7 @@ import type { RouteRecordRaw } from "vue-router";
 
 // 导入视图组件
 const Home = () => import("@/views/Home.vue");
-const Books = () => import("@/views/Books.vue");
-const BookContent = () => import("@/views/BookContent.vue");
-const ImageGalleryPage = () => import("@/views/ImageGalleryPage.vue");
-const ThreeDScene = () => import("@/views/ThreeDScene.vue");
+const LoginRegister = () => import("@/views/LoginRegister.vue");
 
 // 定义路由配置
 const routes: Array<RouteRecordRaw> = [
@@ -16,33 +13,33 @@ const routes: Array<RouteRecordRaw> = [
     component: Home,
   },
   {
-    path: "/books",
-    name: "Books",
-    component: Books,
-  },
-  {
-    path: "/book/:id",
-    name: "BookContent",
-    component: BookContent,
-    props: true,
-  },
-  {
-    path: "/image-gallery",
-    name: "ImageGallery",
-    component: ImageGalleryPage,
-  },
-  {
-    path: "/3d-scene",
-    name: "ThreeDScene",
-    component: ThreeDScene,
+    path: "/login",
+    name: "LoginRegister",
+    component: LoginRegister,
   },
 ];
 
 // 创建路由实例
 const router = createRouter({
-  // 使用固定的base路径，与vite.config.ts中的配置保持一致
-  history: createWebHistory(import.meta.env.BASE_URL || "/"),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+});
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem("token");
+  const publicRoutes = ["/login"];
+
+  // 已登录访问登录页 → 跳首页
+  if (token && to.path === "/login") {
+    next("/");
+  }
+  // 未登录访问非公开页 → 跳登录
+  else if (!token && !publicRoutes.includes(to.path)) {
+    next("/login");
+  } else {
+    next();
+  }
 });
 
 export default router;

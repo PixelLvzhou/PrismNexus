@@ -1,0 +1,24 @@
+# 主题切换平滑过渡动画 - 验证检查清单
+
+- [x] 检查 grid-background 容器的背景色过渡效果
+- [x] 检查 grid-background 容器的背景图像过渡效果
+- [x] 检查 theme-button 的颜色过渡效果
+- [x] 检查 theme-item 的背景色和文字色过渡效果
+- [x] 检查 logo 文字的颜色过渡效果
+- [x] 检查 form-group label 的背景色和文字色过渡效果
+- [x] 检查 input 元素的相关过渡效果
+- [x] 检查 login-button 的背景色和文字色过渡效果
+- [x] 检查 send-code-button 的背景色和文字色过渡效果
+- [x] 检查 error-message 的颜色过渡效果
+- [x] 检查 api-success 和 api-error 的颜色过渡效果
+- [x] 检查 triangle 元素的 filter 过渡效果
+- [x] 检查 triangle 元素的 border-color 过渡效果
+- [x] 检查 inner-triangle 的 border-color 过渡效果
+- [x] 检查所有图标元素的颜色过渡效果
+- [x] 检查 system-status 的颜色过渡效果
+- [x] 检查 success-message 相关元素的颜色过渡效果
+- [x] 验证所有过渡效果的时长为 0.3 秒
+- [x] 验证所有过渡效果使用 ease 或 ease-out 曲线
+- [x] 测试所有主题方案之间的切换效果
+- [x] 确保过渡效果在不同浏览器中正常工作
+- [x] 确保过渡效果不影响页面性能

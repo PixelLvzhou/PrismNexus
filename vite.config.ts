@@ -14,8 +14,8 @@ export default defineConfig({
       enable: true,
     }),
   ],
-  // 已更新为正确的GitHub仓库名称'shanhaijing'
-  base: "/shanhaijing/",
+  // 基础路径配置为 PrismNexus
+  base: "/PrismNexus/",
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),
