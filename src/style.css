@@ -3,14 +3,34 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
+  color-scheme: dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #121212;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  /* 主题颜色过渡效果 */
+  --theme-primary: #5fcd98;
+  --theme-darker-primary: #1a5c3a;
+  --theme-secondary: #c0c5ce;
+  --theme-background: #000;
+  --theme-text: #fff;
+  --theme-button-text: #000;
+  --theme-grid-color: rgba(128, 128, 128, 0.1);
+  
+  /* 全局颜色过渡 */
+  transition: --theme-primary 1s ease, 
+              --theme-darker-primary 1s ease,
+              --theme-secondary 1s ease,
+              --theme-background 1s ease,
+              --theme-text 1s ease,
+              --theme-button-text 1s ease,
+              --theme-grid-color 1s ease,
+              background-color 1s ease,
+              color 1s ease;
 }
 
 a {
@@ -24,10 +44,9 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #121212;
 }
 
 h1 {
@@ -59,16 +78,14 @@ button:focus-visible {
 }
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
-    background-color: #ffffff;
+    background-color: #121212;
   }
   a:hover {
     color: #747bff;

@@ -1,37 +1,16 @@
 <template>
-  <div class="grid-background" :style="{ backgroundColor: themeColors.background, backgroundImage: `linear-gradient(${themeColors.gridColor} 1px, transparent 1px), linear-gradient(90deg, ${themeColors.gridColor} 1px, transparent 1px)` }">
-    <div class="page-logo">
+  <div class="page-container">
+    <DynamicParticleBackground></DynamicParticleBackground>
+    <div class="page-content">
+      <div class="page-logo">
       <div class="logo-triangle">
         <div class="inner-triangle"></div>
       </div>
       <span class="logo-text">Prism Nexus</span>
     </div>
     
-    <!-- 主题切换 -->
-    <div class="theme-switcher">
-      <div class="theme-button" :class="{ 'theme-button-active': showThemeMenu }" @click="toggleThemeMenu">Prism Switch</div>
-      <div class="theme-menu" :class="{ 'theme-menu-open': showThemeMenu }">
-        <div 
-          v-for="(color, theme) in themes" 
-          :key="theme"
-          class="theme-item"
-          @click="switchTheme(theme)"
-          :style="{ color: color.primary }"
-        >
-          <div class="theme-item-icon" :style="{ borderBottomColor: color.primary }">
-            <div class="theme-item-inner-icon"></div>
-          </div>
-          {{ theme }}
-        </div>
-      </div>
-    </div>
-    
-    <!-- 主题切换过渡效果 -->
-    <div 
-      class="theme-transition" 
-      v-show="showTransition"
-      :style="{ backgroundColor: themeColors.primary }"
-    ></div>
+    <!-- 主题切换组件 -->
+    <ThemeSwitcher class="position-absolute" />
     
     <div class="login-form">
       <!-- Logo -->
@@ -73,13 +52,17 @@
               <div class="input-wrapper">
                 <i class="fas fa-lock icon"></i>
                 <input 
-                  type="password" 
+                  :type="showLoginPassword ? 'text' : 'password'" 
                   v-model="loginForm.password" 
                   placeholder="********"
                   :class="{ 'input-focus': focusedInputs.password }"
                   @focus="focusedInputs.password = true"
                   @blur="focusedInputs.password = false; validateLoginPassword()"
                 />
+                <i 
+                  :class="['fas', showLoginPassword ? 'fa-eye-slash' : 'fa-eye', 'eye-icon']" 
+                  @click="showLoginPassword = !showLoginPassword"
+                ></i>
               </div>
             </div>
             <div v-if="errors.password" class="error-message">{{ errors.password }}</div>
@@ -199,13 +182,17 @@
                   <div class="input-wrapper">
                     <i class="fas fa-lock icon"></i>
                     <input 
-                      type="password" 
+                      :type="showForgotNewPassword ? 'text' : 'password'" 
                       v-model="forgotPasswordForm.newPassword" 
                       placeholder="********"
                       :class="{ 'input-focus': focusedInputs.password }"
                       @focus="focusedInputs.password = true"
                       @blur="focusedInputs.password = false; validateForgotNewPassword()"
                     />
+                    <i 
+                      :class="['fas', showForgotNewPassword ? 'fa-eye-slash' : 'fa-eye', 'eye-icon']" 
+                      @click="showForgotNewPassword = !showForgotNewPassword"
+                    ></i>
                   </div>
                 </div>
                 <div v-if="errors.password" class="error-message">{{ errors.password }}</div>
@@ -217,13 +204,17 @@
                   <div class="input-wrapper">
                     <i class="fas fa-lock icon"></i>
                     <input 
-                      type="password" 
+                      :type="showForgotConfirmNewPassword ? 'text' : 'password'" 
                       v-model="forgotPasswordForm.confirmNewPassword" 
                       placeholder="********"
                       :class="{ 'input-focus': focusedInputs.confirmNewPassword }"
                       @focus="focusedInputs.confirmNewPassword = true"
                       @blur="focusedInputs.confirmNewPassword = false; validateForgotConfirmNewPassword()"
                     />
+                    <i 
+                      :class="['fas', showForgotConfirmNewPassword ? 'fa-eye-slash' : 'fa-eye', 'eye-icon']" 
+                      @click="showForgotConfirmNewPassword = !showForgotConfirmNewPassword"
+                    ></i>
                   </div>
                 </div>
                 <div v-if="errors.confirmNewPassword" class="error-message">{{ errors.confirmNewPassword }}</div>
@@ -314,13 +305,17 @@
                 <div class="input-wrapper">
                   <i class="fas fa-lock icon"></i>
                   <input 
-                    type="password" 
+                    :type="showRegisterPassword ? 'text' : 'password'" 
                     v-model="registerForm.password" 
                     placeholder="********"
                     :class="{ 'input-focus': focusedInputs.password }"
                     @focus="focusedInputs.password = true"
                     @blur="focusedInputs.password = false; validateRegisterPassword()"
                   />
+                  <i 
+                    :class="['fas', showRegisterPassword ? 'fa-eye-slash' : 'fa-eye', 'eye-icon']" 
+                    @click="showRegisterPassword = !showRegisterPassword"
+                  ></i>
                 </div>
               </div>
               <div v-if="errors.password" class="error-message">{{ errors.password }}</div>
@@ -332,13 +327,17 @@
                 <div class="input-wrapper">
                   <i class="fas fa-lock icon"></i>
                   <input 
-                    type="password" 
+                    :type="showRegisterConfirmPassword ? 'text' : 'password'" 
                     v-model="registerForm.confirmPassword" 
                     placeholder="********"
                     :class="{ 'input-focus': focusedInputs.confirmPassword }"
                     @focus="focusedInputs.confirmPassword = true"
                     @blur="focusedInputs.confirmPassword = false; validateRegisterConfirmPassword()"
                   />
+                  <i 
+                    :class="['fas', showRegisterConfirmPassword ? 'fa-eye-slash' : 'fa-eye', 'eye-icon']" 
+                    @click="showRegisterConfirmPassword = !showRegisterConfirmPassword"
+                  ></i>
                 </div>
               </div>
               <div v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</div>
@@ -403,35 +402,22 @@
         系统状态: 在线 | v2.0.1
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { login, register, sendVerificationCode as sendCodeApi, resetPassword, verifyCode } from '@/api/auth';
 import { useTheme } from '@/composables/useTheme';
+import { useUserStore } from '@/composables/useUserStore';
+import DynamicParticleBackground from '@/components/DynamicParticleBackground.vue';
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue';
 
-// 主题管理
-const { currentTheme, showThemeMenu, showTransition, showMenu, hideMenu, toggleThemeMenu, closeThemeMenu, themeColors, switchTheme, themes } = useTheme();
-
-// 点击外部区域关闭主题菜单
-const handleClickOutside = (event: MouseEvent) => {
-  const themeSwitcher = document.querySelector('.theme-switcher');
-  if (themeSwitcher && !themeSwitcher.contains(event.target as Node)) {
-    closeThemeMenu();
-  }
-};
-
-// 组件挂载时添加点击监听器
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
-
-// 组件卸载时移除点击监听器
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
+// 主题管理（仅保留需要的主题色）
+const { themeColors } = useTheme();
+const { initUserInfo } = useUserStore();
 
 
 // 邮箱校验函数
@@ -474,6 +460,13 @@ const countdown = ref(60);
 const canSendRegisterCode = ref(true);
 const registerSendCodeText = ref('发送验证码');
 const registerCountdown = ref(60);
+
+// Password visibility
+const showLoginPassword = ref(false);
+const showRegisterPassword = ref(false);
+const showRegisterConfirmPassword = ref(false);
+const showForgotNewPassword = ref(false);
+const showForgotConfirmNewPassword = ref(false);
 
 // Forms
 const loginForm = reactive({
@@ -679,7 +672,10 @@ const handleLogin = async () => {
       throw new Error('登录成功但未获取到 token');
     }
     
-    await router.replace('/');
+    // 初始化用户信息
+    await initUserInfo();
+    
+    await router.replace('/loading');
   } catch (error: any) {
     apiError.value = error.message || '登录失败';
     setTimeout(() => {
@@ -986,9 +982,26 @@ const switchToLogin = () => {
 </script>
 
 <style scoped>
-.grid-background {
+.page-container {
   width: 100vw;
   height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.grid-background {
+  width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -996,145 +1009,9 @@ const switchToLogin = () => {
   overflow: hidden;
   background-size: 40px 40px;
   z-index: 0;
-  transition: background-color 0.3s ease, background-image 0.3s ease;
-}
-
-/* 主题切换器 */
-.theme-switcher {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 100;
-  width: 120px;
-}
-
-.theme-button {
-  width: 100%;
-  text-align: right;
-  color: v-bind('themeColors.primary');
-  font-family: 'Orbitron', 'Rajdhani', '宋体', 'SimSun', serif;
-  font-size: 13px;
-  font-weight: bold;
-  cursor: pointer;
-  padding: 5px 10px;
-  transition: color 0.3s ease;
-  box-sizing: border-box;
-}
-
-.theme-button:hover {
-  /* 颜色与正常状态相同，无需额外定义 */
-}
-
-.theme-button-active {
-  border-bottom: 1px solid rgba(128, 128, 128, 0.3);
-}
-
-.theme-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0;
-  background-color: transparent;
-  border: none;
-  min-width: 100%;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out;
-  pointer-events: none;
-  text-align: right;
-}
-
-.theme-menu-open {
-  max-height: 200px;
-  transition: max-height 0.3s ease-in;
-  pointer-events: auto;
-}
-
-/* 点击显示主题菜单，移除悬停效果 */
-
-.theme-item {
-  padding: 3px 10px;
-  color: #fff;
-  font-family: 'Orbitron', 'Rajdhani', '宋体', 'SimSun', serif;
-  font-size: 13px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  background-color: transparent;
-  text-align: right;
-  margin-left: 0;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.theme-item:hover {
-  background-color: rgba(128, 128, 128, 0.2);
-}
-
-.theme-item {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.theme-item-icon {
-  position: relative;
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-}
-
-.theme-item-icon::before {
-  content: '';
-  position: absolute;
-  top: 1px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 10px solid;
-  transition: border-bottom-color 0.3s ease;
-}
-
-.theme-item-inner-icon {
-  position: absolute;
-  top: 4px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1;
-  width: 0;
-  height: 0;
-  border-left: 3px solid transparent;
-  border-right: 3px solid transparent;
-  border-bottom: 5px solid #000;
-  transition: border-bottom-color 0.3s ease;
 }
 
 
-
-/* 主题切换过渡效果 */
-.theme-transition {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  z-index: 999;
-  animation: theme-transition 0.6s ease-out;
-  pointer-events: none;
-}
-
-@keyframes theme-transition {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
 
 .page-logo {
   position: absolute;
@@ -1314,7 +1191,6 @@ const switchToLogin = () => {
   max-height: 200px;
   overflow-y: auto;
   margin-bottom: 20px;
-  padding-right: 10px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -1408,6 +1284,22 @@ const switchToLogin = () => {
   flex: 1;
 }
 
+.input-wrapper .eye-icon {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: v-bind('themeColors.text');
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.input-wrapper .eye-icon:hover {
+  opacity: 1;
+}
+
 .input-wrapper.with-button {
   display: flex;
   align-items: stretch;
@@ -1484,7 +1376,7 @@ const switchToLogin = () => {
 
 .form-group input {
   flex: 1;
-  padding: 3px 10px 3px 30px;
+  padding: 3px 30px 3px 30px;
   background-color: transparent;
   border: none;
   border-bottom: none;
@@ -1526,7 +1418,7 @@ const switchToLogin = () => {
 }
 
 .login-button {
-  width: 300px;
+  width: 100%;
   padding: 12px;
   background-color: v-bind('themeColors.primary');
   border: none;
