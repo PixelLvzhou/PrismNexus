@@ -20,108 +20,50 @@
         </div>
 
         <Transition name="fade-slide" mode="out-in">
-          <!-- 权限管理容器 -->
           <div v-if="!isApplicationMode" key="manage" class="content-container">
-            <div class="search-container">
-              <div class="search-box">
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input 
-                  type="text" 
-                  v-model="searchKeyword"
-                  placeholder="搜索 ID 或用户名..."
-                  class="search-input"
-                />
-                <button 
-                  v-if="searchKeyword"
-                  class="search-clear"
-                  @click="clearSearch"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="accounts-header" :style="{ backgroundColor: headerBgColor }">
-              <div class="header-item">ID</div>
-              <div class="header-item">头像</div>
-              <div class="header-item">用户名</div>
-              <div class="header-item">邮箱</div>
-              <div class="header-item">角色</div>
-              <div class="header-item">状态</div>
-              <div class="header-item">权限能力</div>
-            </div>
-
-            <div 
-              v-for="user in paginatedUsers" 
-              :key="user.id" 
-              class="account-row"
+            <DataTable
+              :columns="userColumns"
+              :data="users"
+              :show-search="true"
+              search-placeholder="搜索 ID 或用户名..."
+              :show-pagination="true"
+              :page-size="PAGE_SIZE"
             >
-              <div class="account-item id">{{ user.id }}</div>
-              <div class="account-item avatar-cell">
-                <div class="user-avatar-small">
-                  <img v-if="user.avatar_url" :src="user.avatar_url" alt="头像" class="avatar-img" />
-                  <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="avatar-default">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
+              <template #cell-avatar_url="{ row }">
+                <div class="account-item avatar-cell">
+                  <div class="user-avatar-small">
+                    <img v-if="row.avatar_url" :src="row.avatar_url" alt="头像" class="avatar-img" />
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="avatar-default">
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                  </div>
                 </div>
-              </div>
-              <div class="account-item">{{ user.username }}</div>
-              <div class="account-item">{{ user.email }}</div>
-              <div class="account-item">
-                <span :class="['role-badge', user.role]">{{ getRoleLabel(user.role) }}</span>
-              </div>
-              <div class="account-item">
-                <span :class="['status-badge', user.status]">{{ user.status === 'enabled' ? '正常' : '封禁' }}</span>
-              </div>
-              <div class="account-item">
-                <div class="permission-tags">
-                  <button class="detail-btn" @click="showDetailDialog(user)">权限配置</button>
+              </template>
+
+              <template #cell-role="{ row }">
+                <div class="account-item">
+                  <span :class="['role-badge', row.role]">{{ getRoleLabel(row.role) }}</span>
                 </div>
-              </div>
-            </div>
+              </template>
 
-            <div v-if="filteredUsers.length === 0" class="empty-state">
-              暂无账户数据
-            </div>
+              <template #cell-status="{ row }">
+                <div class="account-item">
+                  <span :class="['status-dot', row.status]"></span>
+                </div>
+              </template>
 
-            <div class="pagination-container">
-              <button 
-                class="pagination-btn prev"
-                :disabled="currentPage === 1"
-                @click="goToPrevPage"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-              </button>
-              <div class="pagination-numbers">
-                <span 
-                  v-for="page in totalPages" 
-                  :key="page"
-                  class="pagination-number"
-                  :class="{ active: page === currentPage }"
-                  @click="goToPage(page)"
-                >{{ page }}</span>
-              </div>
-              <button 
-                class="pagination-btn next"
-                :disabled="currentPage === totalPages"
-                @click="goToNextPage"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
-            </div>
+              <template #cell-permissions="{ row }">
+                <div class="account-item">
+                  <div class="permission-tags">
+                    <button class="detail-btn" @click="showDetailDialog(row)">权限配置</button>
+                  </div>
+                </div>
+              </template>
+
+              <template #empty>暂无账户数据</template>
+            </DataTable>
           </div>
 
-          <!-- 权限申请容器 - 仅开发者可见 -->
           <div v-else key="apply" class="content-container application-mode">
             <div class="filter-container">
               <span class="filter-label">状态筛选：</span>
@@ -137,52 +79,78 @@
               </div>
             </div>
 
-            <div class="applications-header" :style="{ backgroundColor: headerBgColor }">
-              <div class="header-item">申请人</div>
-              <div class="header-item">申请权限</div>
-              <div class="header-item">申请时间</div>
-              <div class="header-item">过期时间</div>
-              <div class="header-item">审批人</div>
-              <div class="header-item">状态</div>
-              <div class="header-item">操作</div>
-            </div>
-
-            <div 
-              v-for="app in filteredApplications" 
-              :key="app.id" 
-              class="application-row"
+            <DataTable
+              :columns="applicationColumns"
+              :data="applications"
+              :show-search="false"
+              :show-pagination="true"
+              :page-size="PAGE_SIZE"
+              :total="totalApplications"
+              :current-page="currentPage"
+              @page-change="handlePageChange"
             >
-              <div class="application-item">{{ app.applicant_name }}</div>
-              <div class="application-item">{{ getPermissionName(app.permission_code) }}</div>
-              <div class="application-item">{{ formatDate(app.created_at) }}</div>
-              <div class="application-item">{{ formatDate(app.expires_at) }}</div>
-              <div class="application-item">{{ app.approver_name || '-' }}</div>
-              <div class="application-item">
-                <span :class="['status-badge', app.status]">{{ getStatusLabel(app.status) }}</span>
-              </div>
-              <div class="application-item actions">
-                <template v-if="app.status === 'pending' && currentRole === 'developer'">
-                  <button class="action-btn approve" @click="handleApprove(app)">通过</button>
-                  <button class="action-btn reject" @click="handleReject(app)">驳回</button>
-                </template>
-                <template v-else-if="app.status === 'rejected' && app.reject_reason">
-                  <span class="reject-reason" @click="handleViewRejectReason(app)">查看原因</span>
-                </template>
-                <template v-else>
-                  <span class="no-action">-</span>
-                </template>
-              </div>
-            </div>
+              <template #cell-permission_code="{ row }">
+                <div class="application-item">{{ getPermissionName(row.permission_code) }}</div>
+              </template>
 
-            <div v-if="filteredApplications.length === 0" class="empty-state">
-              暂无申请记录
-            </div>
+              <template #cell-created_at="{ row }">
+                <div class="application-item">{{ formatDate(row.created_at) }}</div>
+              </template>
+
+              <template #cell-expires_at="{ row }">
+                <div class="application-item">{{ formatDate(row.expires_at) }}</div>
+              </template>
+
+              <template #cell-approver_name="{ row }">
+                <div class="application-item">{{ row.approver_name || '-' }}</div>
+              </template>
+
+              <template #cell-status="{ row }">
+                <div class="application-item">
+                  <span :class="['status-text', row.status]">{{ getStatusLabel(row.status) }}</span>
+                </div>
+              </template>
+
+              <template #cell-actions="{ row }">
+                <div class="application-item actions">
+                  <template v-if="row.status === 'pending' && currentRole === 'developer'">
+                    <button class="action-btn approve" @click="handleApprove(row)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      <span class="tooltip">通过</span>
+                    </button>
+                    <button class="action-btn reject" @click="handleReject(row)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                      <span class="tooltip">驳回</span>
+                    </button>
+                  </template>
+                  <template v-else-if="row.status === 'rejected' && row.reject_reason">
+                    <span class="reject-reason" @click="handleViewRejectReason(row)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                      <span class="tooltip">查看原因</span>
+                    </span>
+                  </template>
+                  <template v-else>
+                    <span class="no-action">-</span>
+                  </template>
+                </div>
+              </template>
+
+              <template #empty>暂无申请记录</template>
+            </DataTable>
           </div>
         </Transition>
       </div>
     </div>
 
-    <!-- 详情弹框 -->
     <DetailDialog 
       :visible="detailDialog.visible"
       :title="detailDialog.title"
@@ -195,6 +163,8 @@
         <span class="detail-value">{{ detailDialog.user?.username }}</span>
         <span class="detail-label" style="margin-left: 30px;">角色：</span>
         <span :class="['role-badge', detailDialog.user?.role]">{{ getRoleLabel(detailDialog.user?.role) }}</span>
+        <span class="detail-label" style="margin-left: 30px;">状态：</span>
+        <span :class="['status-dot', detailDialog.user?.status]" style="position: relative; top: -2px;"></span>
       </div>
       <div class="detail-permissions-section">
         <div class="detail-permissions-title">权限分配</div>
@@ -235,7 +205,6 @@
     </div>
     </DetailDialog>
 
-    <!-- 驳回原因弹框 -->
     <DetailDialog 
       :visible="rejectDialog.visible"
       title="填写驳回原因"
@@ -297,6 +266,7 @@ import DecorationCanvas from '@/components/DecorationCanvas.vue';
 import DetailDialog from '@/components/DetailDialog.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Toast from '@/components/Toast.vue';
+import DataTable from '@/components/DataTable.vue';
 import { queryApplications, approveApplication, rejectApplication, grantPermission, PERMISSION_CODES } from '@/api/permission';
 import { soundManager } from '@/utils/soundManager';
 
@@ -340,9 +310,9 @@ const error = ref('');
 const currentRole = ref('user');
 const users = ref<User[]>([]);
 const applications = ref<Application[]>([]);
-const searchKeyword = ref('');
+const totalApplications = ref(0);
 const currentPage = ref(1);
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 const isApplicationMode = ref(false);
 const selectedStatus = ref('all');
 const selectedApplication = ref<Application | null>(null);
@@ -363,7 +333,6 @@ const detailDialog = reactive({
   selectedPermissions: [] as string[]
 });
 
-// 获取所有权限编码列表
 const allPermissions = computed(() => {
   return Object.values(PERMISSION_CODES).map(p => ({
     code: p.code,
@@ -384,38 +353,26 @@ const confirmDialog = reactive({
   onConfirm: undefined as (() => void) | undefined
 });
 
-const headerBgColor = computed(() => {
-  const color = themeColors.value.primary;
-  return hexToRgba(color, 0.2);
-});
+const userColumns = computed(() => [
+  { key: 'id', label: 'ID', width: '0.5fr', class: 'id' },
+  { key: 'avatar_url', label: '头像', width: '0.5fr', class: 'avatar-cell' },
+  { key: 'username', label: '用户名', width: '1fr' },
+  { key: 'email', label: '邮箱', width: '1.5fr' },
+  { key: 'role', label: '角色', width: '1fr' },
+  { key: 'status', label: '状态', width: '1fr', class: 'status-center' },
+  { key: 'permissions', label: '权限能力', width: '2fr', class: 'actions' }
+]);
 
-const hexToRgba = (hex: string, alpha: number): string => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (result) {
-    return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${alpha})`;
-  }
-  return `rgba(100, 200, 255, ${alpha})`;
-};
-
-const filteredUsers = computed(() => {
-  if (!searchKeyword.value.trim()) {
-    return users.value;
-  }
-  const keyword = searchKeyword.value.trim().toLowerCase();
-  return users.value.filter(user => {
-    return user.id.toString().includes(keyword) || 
-           user.username.toLowerCase().includes(keyword);
-  });
-});
-
-const totalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredUsers.value.length / PAGE_SIZE));
-});
-
-const paginatedUsers = computed(() => {
-  const start = (currentPage.value - 1) * PAGE_SIZE;
-  return filteredUsers.value.slice(start, start + PAGE_SIZE);
-});
+const applicationColumns = computed(() => [
+  { key: 'id', label: 'ID', width: '0.5fr', class: 'id' },
+  { key: 'applicant_name', label: '申请人', width: '1fr' },
+  { key: 'permission_code', label: '申请权限', width: '1fr' },
+  { key: 'created_at', label: '申请时间', width: '1.5fr' },
+  { key: 'expires_at', label: '过期时间', width: '1.5fr' },
+  { key: 'approver_name', label: '审批人', width: '1fr' },
+  { key: 'status', label: '状态', width: '1fr', class: 'status-center' },
+  { key: 'actions', label: '操作', width: '1.5fr', class: 'actions' }
+]);
 
 const filteredApplications = computed(() => {
   if (selectedStatus.value === 'all') {
@@ -450,37 +407,39 @@ const getStatusLabel = (status: string): string => {
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleString('zh-CN');
+  // 移除时区信息，将 UTC 时间当作本地时间处理
+  const localDateStr = dateStr.replace('Z', '').replace('T', ' ').slice(0, 16);
+  return localDateStr.replace(' ', ' ');
 };
 
-const clearSearch = () => {
-  searchKeyword.value = '';
+const formatRelativeTime = (dateStr: string) => {
+  if (!dateStr) return '-';
+  // 移除时区信息，将 UTC 时间当作本地时间处理
+  const localDateStr = dateStr.replace('Z', '').replace('T', ' ');
+  const date = new Date(localDateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.max(1, Math.floor(diffMs / (1000 * 60)));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffMinutes < 60) {
+    return `${diffMinutes}分钟之前`;
+  } else if (diffHours < 24) {
+    return `${diffHours}小时前`;
+  } else if (diffDays <= 7) {
+    return `${diffDays}天前`;
+  } else {
+    return '7天前';
+  }
 };
 
 const goBack = () => {
   router.push('/');
 };
 
-const goToPrevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-  }
-};
-
-const goToNextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-  }
-};
-
-const goToPage = (page: number) => {
-  currentPage.value = page;
-};
-
 const showDetailDialog = (user: User) => {
   detailDialog.user = user;
-  // 初始化选中状态为用户已有的权限
   detailDialog.selectedPermissions = user.permissions
     .filter(p => p.granted)
     .map(p => p.code);
@@ -508,7 +467,7 @@ const handleGrantPermission = async () => {
   try {
     await grantPermission(detailDialog.user.id, detailDialog.selectedPermissions);
     closeDetailDialog();
-    fetchAccounts(); // 刷新账户列表
+    fetchAccounts();
     toast.value?.success('权限配置成功');
   } catch (err: any) {
     toast.value?.error(err.message || '操作失败');
@@ -587,14 +546,16 @@ const submitReject = async () => {
   }
 };
 
-watch(searchKeyword, () => {
-  currentPage.value = 1;
-});
-
 watch(isApplicationMode, (newVal) => {
   if (newVal) {
+    currentPage.value = 1;
     fetchApplications();
   }
+});
+
+watch(selectedStatus, () => {
+  currentPage.value = 1;
+  fetchApplications(1);
 });
 
 const fetchAccounts = async () => {
@@ -630,16 +591,26 @@ const fetchAccounts = async () => {
   }
 };
 
-const fetchApplications = async () => {
+const fetchApplications = async (page = 1) => {
   const token = localStorage.getItem('token');
   if (!token) return;
 
   try {
-    const data = await queryApplications({ status: 'all' });
+    const data = await queryApplications({ 
+      status: selectedStatus.value,
+      page,
+      page_size: PAGE_SIZE
+    });
     applications.value = data.applications || [];
+    totalApplications.value = data.pagination?.total || 0;
   } catch (err: any) {
     console.error('获取申请列表失败:', err.message);
   }
+};
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
+  fetchApplications(page);
 };
 
 onMounted(() => {
@@ -767,123 +738,44 @@ onMounted(() => {
   transform: translateY(-20px);
 }
 
-.search-container {
+.filter-container {
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
   margin-bottom: 20px;
 }
 
-.search-box {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid v-bind('themeColors.primary');
-  border-radius: 0;
-  padding: 8px 16px;
-  width: 300px;
-  transition: all 0.3s ease;
-}
-
-.search-box:focus-within {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.search-icon {
-  width: 18px;
-  height: 18px;
-  color: v-bind('themeColors.secondary');
-  margin-right: 10px;
-}
-
-.search-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
+.filter-label {
   color: v-bind('themeColors.primary');
   font-size: 14px;
-  font-family: 'Rajdhani', sans-serif;
-}
-
-.search-input::placeholder {
-  color: v-bind('themeColors.secondary');
-  opacity: 0.6;
-}
-
-.search-clear {
-  width: 20px;
-  height: 20px;
-  background: transparent;
-  border: none;
-  color: v-bind('themeColors.secondary');
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin-left: 8px;
-  transition: color 0.2s ease;
-}
-
-.search-clear:hover {
-  color: v-bind('themeColors.primary');
-}
-
-.search-clear svg {
-  width: 14px;
-  height: 14px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: #888888;
-  font-size: 16px;
-  font-family: 'Rajdhani', sans-serif;
-}
-
-.accounts-header,
-.applications-header {
-  display: grid;
-  padding: 15px 20px;
   font-weight: 600;
-  color: v-bind('themeColors.primary');
-  text-align: left;
-  border-bottom: 1px solid v-bind('themeColors.primary');
-}
-
-.accounts-header {
-  grid-template-columns: 0.5fr 0.5fr 1fr 1.5fr 1fr 1fr 2fr;
-}
-
-.applications-header {
-  grid-template-columns: 1fr 1fr 1.5fr 1.5fr 1fr 1fr 1.5fr;
-}
-
-.header-item {
+  margin-right: 12px;
   font-family: 'Rajdhani', sans-serif;
 }
 
-.account-row,
-.application-row {
-  display: grid;
-  padding: 10px 20px;
-  border-bottom: 1px solid v-bind('themeColors.primary');
-  align-items: center;
-  transition: background-color 0.3s ease;
+.filter-buttons {
+  display: flex;
+  gap: 8px;
 }
 
-.account-row {
-  grid-template-columns: 0.5fr 0.5fr 1fr 1.5fr 1fr 1fr 2fr;
+.filter-btn {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid v-bind('themeColors.primary');
+  color: v-bind('themeColors.secondary');
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Rajdhani', sans-serif;
 }
 
-.application-row {
-  grid-template-columns: 1fr 1fr 1.5fr 1.5fr 1fr 1fr 1.5fr;
-}
-
-.account-row:hover,
-.application-row:hover {
+.filter-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.filter-btn.active {
+  background: v-bind('themeColors.primary');
+  color: #1a1a1a;
 }
 
 .account-item,
@@ -894,6 +786,10 @@ onMounted(() => {
 }
 
 .account-item.id {
+  font-weight: 600;
+}
+
+.application-item.id {
   font-weight: 600;
 }
 
@@ -947,39 +843,97 @@ onMounted(() => {
   color: #ffffff;
 }
 
-.status-badge.enabled {
-  background: rgba(52, 211, 153, 0.2);
-  color: #34d399;
+.status-dot {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
 }
 
-.status-badge.disabled {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+.status-dot.enabled {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc66 30%, #00aa55 60%, #00ff88 100%);
+  animation: green-pulse 1.5s ease-in-out infinite;
 }
 
-.status-badge.pending {
-  background: rgba(234, 179, 8, 0.2);
+.status-dot.disabled {
+  background: linear-gradient(135deg, #ff3366 0%, #ff0055 30%, #cc0044 60%, #ff3366 100%);
+  animation: red-pulse 1.5s ease-in-out infinite;
+}
+
+.status-dot.pending {
+  background: linear-gradient(135deg, #eab308 0%, #f59e0b 50%, #d97706 100%);
+  animation: yellow-pulse 1.5s ease-in-out infinite;
+}
+
+.status-dot.approved {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc66 30%, #00aa55 60%, #00ff88 100%);
+  animation: green-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes green-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.7), 0 0 30px rgba(0, 204, 102, 0.5), 0 0 45px rgba(0, 170, 85, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.9), 0 0 60px rgba(0, 204, 102, 0.7), 0 0 90px rgba(0, 170, 85, 0.5);
+  }
+}
+
+@keyframes red-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.7), 0 0 30px rgba(255, 0, 85, 0.5), 0 0 45px rgba(204, 0, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 51, 102, 0.9), 0 0 60px rgba(255, 0, 85, 0.7), 0 0 90px rgba(204, 0, 68, 0.5);
+  }
+}
+
+@keyframes yellow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(234, 179, 8, 0.7), 0 0 30px rgba(245, 158, 11, 0.5), 0 0 45px rgba(217, 119, 6, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(234, 179, 8, 0.9), 0 0 60px rgba(245, 158, 11, 0.7), 0 0 90px rgba(217, 119, 6, 0.5);
+  }
+}
+
+/* 申请记录状态文字标签 */
+.status-text {
+  padding: 4px 12px;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.status-text.pending {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%);
   color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.5);
 }
 
-.status-badge.approved {
-  background: rgba(52, 211, 153, 0.2);
-  color: #34d399;
+.status-text.approved {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 163, 74, 0.2) 100%);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.5);
 }
 
-.status-badge.rejected {
-  background: rgba(148, 163, 164, 0.2);
-  color: #94a3b8;
+.status-text.rejected {
+  background: rgba(255, 255, 255, 0.05);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.5);
 }
 
-.status-badge.expired {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+.status-text.expired {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.5);
 }
 
-.status-badge.cancelled {
-  background: rgba(148, 163, 164, 0.2);
-  color: #94a3b8;
+.status-text.cancelled {
+  background: rgba(255, 255, 255, 0.05);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.5);
 }
 
 .permission-tags {
@@ -1027,32 +981,63 @@ onMounted(() => {
 }
 
 .action-btn {
-  padding: 4px 10px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 0;
-  font-size: 12px;
-  font-weight: 600;
+  background: transparent !important;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-family: 'Rajdhani', sans-serif;
+  position: relative;
+  overflow: visible;
+}
+
+.action-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.action-btn .tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  padding: 4px 10px;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.action-btn:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .action-btn.approve {
-  background: rgba(52, 211, 153, 0.2);
   color: #34d399;
 }
 
 .action-btn.approve:hover {
-  background: rgba(52, 211, 153, 0.4);
+  background: transparent;
 }
 
 .action-btn.reject {
-  background: rgba(239, 68, 68, 0.2);
   color: #ef4444;
 }
 
 .action-btn.reject:hover {
-  background: rgba(239, 68, 68, 0.4);
+  background: transparent;
 }
 
 .no-action {
@@ -1063,117 +1048,42 @@ onMounted(() => {
   color: #94a3b8;
   font-size: 12px;
   cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .reject-reason:hover {
   text-decoration: underline;
 }
 
-.pagination-container {
-  position: fixed;
-  bottom: 30px;
+.reject-reason svg {
+  width: 16px;
+  height: 16px;
+}
+
+.reject-reason .tooltip {
+  position: absolute;
+  top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 10;
-}
-
-.pagination-btn {
-  width: 24px;
-  height: 24px;
-  background: transparent;
-  border: none;
-  color: v-bind('themeColors.secondary');
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.pagination-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  color: v-bind('themeColors.primary');
-  transform: scale(1.2);
-}
-
-.pagination-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.pagination-numbers {
-  display: flex;
-  gap: 8px;
-}
-
-.pagination-number {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: v-bind('themeColors.secondary');
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.pagination-number:hover {
-  color: v-bind('themeColors.primary');
-}
-
-.pagination-number.active {
-  color: v-bind('themeColors.primary');
-  text-decoration: underline;
-}
-
-.filter-container {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.filter-label {
-  color: v-bind('themeColors.primary');
-  font-size: 14px;
-  font-weight: 600;
-  margin-right: 12px;
-  font-family: 'Rajdhani', sans-serif;
-}
-
-.filter-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.filter-btn {
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid v-bind('themeColors.primary');
-  color: v-bind('themeColors.secondary');
+  margin-top: 8px;
+  padding: 4px 10px;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #fff;
   font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
   transition: all 0.3s ease;
-  font-family: 'Rajdhani', sans-serif;
+  pointer-events: none;
+  z-index: 100;
 }
 
-.filter-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.filter-btn.active {
-  background: v-bind('themeColors.primary');
-  color: #1a1a1a;
+.reject-reason:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Detail Dialog Content */
@@ -1548,22 +1458,6 @@ onMounted(() => {
 @media (max-width: 768px) {
   .main-content {
     padding: 15px 20px 60px;
-  }
-
-  .accounts-header,
-  .account-row {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .applications-header,
-  .application-row {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .account-item.actions,
-  .application-item.actions {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
   }
 }
 </style>

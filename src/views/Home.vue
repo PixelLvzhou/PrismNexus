@@ -23,6 +23,7 @@ import NavbarRight from '@/components/NavbarRight.vue';
 import Weather from '@/components/Weather.vue';
 import DynamicParticleBackground from '@/components/DynamicParticleBackground.vue';
 import TabSidePanel from '@/components/TabSidePanel.vue';
+import { getNavigations } from '@/api/navigation';
 
 const showPanel = ref(false);
 
@@ -48,18 +49,8 @@ const fetchNavigations = async () => {
   if (!token) return;
   
   try {
-    const response = await fetch('http://localhost:3000/api/navigation', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      console.log('导航路由查询结果:', data);
-    }
+    const data = await getNavigations();
+    console.log('导航路由查询结果:', data);
   } catch (err) {
     console.error('导航路由查询失败:', err);
   }

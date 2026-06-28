@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { getMyPermissions } from '@/api/permission';
+import request from '@/utils/request';
 
 // 全局用户状态
 const userInfo = ref<{
@@ -51,36 +52,27 @@ const initUserInfo = async () => {
 
   initPromise = (async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/me', {
+      const data = await request<any>('/api/auth/me', {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        userInfo.value = {
-          id: data.user?.id || getUserIdFromToken(),
-          username: data.user?.username || '',
-          email: data.user?.email || '',
-          role: data.user?.role || 'user',
-          avatar_url: data.user?.avatar_url || null,
-          bio: data.user?.bio || null
-        };
+      userInfo.value = {
+        id: data.user?.id || getUserIdFromToken(),
+        username: data.user?.username || '',
+        email: data.user?.email || '',
+        role: data.user?.role || 'user',
+        avatar_url: data.user?.avatar_url || null,
+        bio: data.user?.bio || null
+      };
 
-        if (userInfo.value.role !== 'developer') {
-          const permData = await getMyPermissions();
-          permissions.value = permData.permissions || [];
-        } else {
-          permissions.value = [];
-        }
-
-        isInitialized.value = true;
+      if (userInfo.value.role !== 'developer') {
+        const permData = await getMyPermissions();
+        permissions.value = permData.permissions || [];
       } else {
-        resetUserInfo();
+        permissions.value = [];
       }
+
+      isInitialized.value = true;
     } catch (error) {
       console.error('初始化用户信息失败:', error);
       resetUserInfo();

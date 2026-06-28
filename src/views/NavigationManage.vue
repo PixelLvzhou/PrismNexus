@@ -21,106 +21,109 @@
 
         <Transition name="fade-slide" mode="out-in">
           <div v-if="!isEditMode" key="list" class="content-container list-container">
-            <div class="search-container">
-              <div class="search-box">
-                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input 
-                  type="text" 
-                  v-model="searchKeyword"
-                  placeholder="搜索 ID 或导航名称..."
-                  class="search-input"
-                />
-                <button 
-                  v-if="searchKeyword"
-                  class="search-clear"
-                  @click="clearSearch"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </div>
-              <button 
-                v-if="showApplyButton"
-                class="apply-btn"
-                :disabled="applyButtonDisabled"
-                @click="handleApplyPermission"
-              >
-                {{ applyButtonText }}
-              </button>
-            </div>
-
-            <!-- 申请提示 - 根据申请状态显示不同信息 -->
-            <div v-if="applyHintMessage" class="apply-hint">
-              <span class="hint-text">{{ applyHintMessage.text }}</span>
-              <span v-if="applyHintMessage.status === 'pending'" class="hint-cancel" @click="handleCancelApplication">取消申请</span>
-              <span v-else class="hint-cancel" @click="handleApplyPermission">申请</span>
-            </div>
-
-            <div class="nav-header" :style="{ backgroundColor: headerBgColor }">
-              <div class="header-item">ID</div>
-              <div class="header-item">名称</div>
-              <div class="header-item">导航路由</div>
-              <div class="header-item">角色</div>
-              <div class="header-item">状态</div>
-              <div class="header-item">创建时间</div>
-              <div class="header-item">最近修改时间</div>
-              <div class="header-item">操作</div>
-            </div>
-
-            <div 
-              v-for="nav in filteredNavigations" 
-              :key="nav.id" 
-              class="nav-row"
+            <DataTable
+              :columns="columns"
+              :data="navigations"
+              :show-search="true"
+              search-placeholder="搜索 ID 或导航名称..."
+              :show-pagination="true"
+              :page-size="PAGE_SIZE"
+              :total="totalNavigations"
+              :current-page="currentPage"
+              @page-change="handlePageChange"
             >
-              <div class="nav-item id">{{ nav.id }}</div>
-              <div class="nav-item">{{ nav.name }}</div>
-              <div class="nav-item">{{ nav.route }}</div>
-              <div class="nav-item">
-                <div class="role-tags">
-                  <span 
-                    v-for="(p, idx) in nav.permission" 
-                    :key="idx" 
-                    :class="['role-badge', p]"
-                  >{{ getRoleLabel(p) }}</span>
-                </div>
-              </div>
-              <div class="nav-item">
-                <span :class="['status-badge', nav.status ? 'enabled' : 'disabled']">
-                  {{ nav.status ? '启用' : '禁用' }}
-                </span>
-              </div>
-              <div class="nav-item">{{ formatDate(nav.created_at) }}</div>
-              <div class="nav-item">{{ formatDate(nav.updated_at) }}</div>
-              <div class="nav-item actions">
+              <template #search-extra>
                 <button 
-                  v-if="hasNavManagePermission"
-                  class="action-btn edit" 
-                  @click="handleEdit(nav)"
-                >编辑</button>
-                <button 
-                  v-if="hasNavManagePermission"
-                  class="action-btn status" 
-                  :class="{ 'disabled': !nav.status }"
-                  @click="handleStatusClick(nav)"
-                >{{ nav.status ? '禁用' : '启用' }}</button>
-                <button 
-                  v-if="hasNavManagePermission"
-                  class="action-btn delete" 
-                  @click="handleDeleteClick(nav)"
-                >删除</button>
-                <span v-if="!hasNavManagePermission && currentRole === 'admin'" class="no-permission-text">无操作权限</span>
-                <span v-if="!hasNavManagePermission && currentRole === 'user'" class="no-permission-text">无操作权限</span>
-              </div>
-            </div>
+                  v-if="showApplyButton"
+                  class="apply-btn"
+                  :disabled="applyButtonDisabled"
+                  @click="handleApplyPermission"
+                >
+                  {{ applyButtonText }}
+                </button>
+              </template>
 
-            <div v-if="filteredNavigations.length === 0" class="empty-state">
-              暂无导航数据
-            </div>
+              <template #search-bottom>
+                <div v-if="applyHintMessage" class="apply-hint">
+                  <span class="hint-text">{{ applyHintMessage.text }}</span>
+                  <span class="hint-cancel" @click="handleCancelApplication">取消申请</span>
+                </div>
+              </template>
+
+              <template #cell-permission="{ row }">
+                <div class="nav-item">
+                  <div class="role-tags">
+                    <span 
+                      v-for="(p, idx) in row.permission" 
+                      :key="idx" 
+                      :class="['role-badge', p]"
+                    >{{ getRoleLabel(p) }}</span>
+                  </div>
+                </div>
+              </template>
+
+              <template #cell-status="{ row }">
+                <div class="nav-item">
+                  <span :class="['status-dot', row.status ? 'enabled' : 'disabled']"></span>
+                </div>
+              </template>
+
+              <template #cell-created_at="{ row }">
+                <div class="nav-item">{{ formatDate(row.created_at) }}</div>
+              </template>
+
+              <template #cell-updated_at="{ row }">
+                <div class="nav-item">{{ formatRelativeTime(row.updated_at) }}</div>
+              </template>
+
+              <template #cell-actions="{ row }">
+                <div class="nav-item actions">
+                  <button 
+                    v-if="hasNavManagePermission"
+                    class="action-btn edit" 
+                    @click="handleEdit(row)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span class="tooltip">编辑</span>
+                  </button>
+                  <button 
+                    v-if="hasNavManagePermission"
+                    class="action-btn status" 
+                    :class="{ 'disabled': !row.status }"
+                    @click="handleStatusClick(row)"
+                  >
+                    <svg v-if="row.status" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 2a10 10 0 1 0 10 10H2a10 10 0 0 0 10-10z"></path>
+                      <path d="M16 16l-6-6"></path>
+                    </svg>
+                    <span class="tooltip">{{ row.status ? '禁用' : '启用' }}</span>
+                  </button>
+                  <button 
+                    v-if="hasNavManagePermission"
+                    class="action-btn delete" 
+                    @click="handleDeleteClick(row)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span class="tooltip">删除</span>
+                  </button>
+                  <span v-if="!hasNavManagePermission && currentRole === 'admin'" class="no-permission-text">无操作权限</span>
+                  <span v-if="!hasNavManagePermission && currentRole === 'user'" class="no-permission-text">无操作权限</span>
+                </div>
+              </template>
+
+              <template #empty>暂无导航数据</template>
+            </DataTable>
           </div>
 
           <div v-else key="form" class="content-container form-card">
@@ -167,20 +170,16 @@
 
             <div class="form-group">
               <label>权限角色（多选）</label>
-              <div class="permission-selector">
-                <label 
+              <div class="permission-tags-grid">
+                <div 
                   v-for="role in availableRoles" 
-                  :key="role.value" 
-                  class="permission-checkbox"
+                  :key="role.value"
+                  :class="['permission-tag-item', { selected: formData.permission.includes(role.value) }]"
+                  @click="togglePermission(role.value)"
                 >
-                  <input 
-                    type="checkbox" 
-                    :checked="formData.permission.includes(role.value)"
-                    @change="togglePermission(role.value)"
-                  />
-                  <span class="checkbox-custom"></span>
-                  <span class="checkbox-label">{{ role.label }}</span>
-                </label>
+                  <span class="tag-name">{{ role.label }}</span>
+                  <span :class="['tag-check', { visible: formData.permission.includes(role.value) }]">✓</span>
+                </div>
               </div>
               <span v-if="formErrors.permission" class="error-message">{{ formErrors.permission }}</span>
             </div>
@@ -188,37 +187,34 @@
             <div class="form-group">
               <label>状态</label>
               <div class="status-selector">
-                <label class="status-option">
-                  <input 
-                    type="radio" 
-                    name="status" 
-                    :checked="formData.status"
-                    @change="formData.status = true"
-                  />
-                  <span>启用</span>
-                </label>
-                <label class="status-option">
-                  <input 
-                    type="radio" 
-                    name="status" 
-                    :checked="!formData.status"
-                    @change="formData.status = false"
-                  />
-                  <span>禁用</span>
-                </label>
+                <div 
+                  :class="['status-toggle', 'enabled', { active: formData.status }]"
+                  @click="formData.status = true"
+                >
+                  <span class="status-dot"></span>
+                  <span class="status-text">启用</span>
+                </div>
+                <div 
+                  :class="['status-toggle', 'disabled', { active: !formData.status }]"
+                  @click="formData.status = false"
+                >
+                  <span class="status-dot"></span>
+                  <span class="status-text">禁用</span>
+                </div>
               </div>
             </div>
 
             <div class="form-actions">
               <button 
                 class="save-btn"
-                :class="{ 'loading': isSaving }"
+                :class="{ 'loading': isSaving, 'disabled': !hasNavManagePermission }"
+                :disabled="!hasNavManagePermission"
                 @click="handleSaveClick"
               >
                 <video class="btn-video" autoplay loop muted playsinline>
                   <source src="@/assets/videos/btn-confirmbackground.mp4" type="video/mp4">
                 </video>
-                <span class="btn-text">{{ isSaving ? '保存中...' : '保存' }}</span>
+                <span class="btn-text">{{ hasNavManagePermission ? (isSaving ? '保存中...' : '保存') : '无权限' }}</span>
               </button>
             </div>
           </div>
@@ -256,10 +252,11 @@ import DynamicParticleBackground from '@/components/DynamicParticleBackground.vu
 import DecorationCanvas from '@/components/DecorationCanvas.vue';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Toast from '@/components/Toast.vue';
-import { applyPermission, queryApplications, cancelApplication, PERMISSION_CODES } from '@/api/permission';
+import DataTable from '@/components/DataTable.vue';
+import { applyPermission, queryApplications, cancelApplication } from '@/api/permission';
 
 const { themeColors } = useTheme();
-const { userInfo, permissions, currentRole, currentUserId, refreshPermissions } = useUserStore();
+const { permissions, currentRole, currentUserId, refreshPermissions } = useUserStore();
 const router = useRouter();
 const toast = ref<InstanceType<typeof Toast> | null>(null);
 
@@ -292,9 +289,11 @@ const error = ref('');
 const isEditMode = ref(false);
 const editingNav = ref<Navigation | null>(null);
 const shouldClearForm = ref(true);
-const searchKeyword = ref('');
 const isSaving = ref(false);
 const showSaveConfirm = ref(false);
+const totalNavigations = ref(0);
+const currentPage = ref(1);
+const PAGE_SIZE = 12;
 
 const formErrors = reactive<FormErrors>({
   name: '',
@@ -316,10 +315,8 @@ const formData = reactive<FormData>({
   status: true
 });
 
-// 申请记录（按需获取）
 const applications = ref<any[]>([]);
 
-// 权限申请相关计算属性
 const hasNavManagePermission = computed(() => {
   if (currentRole.value === 'developer') return true;
   const perm = permissions.value.find(p => p.code === 'NAV_MANAGE');
@@ -327,13 +324,10 @@ const hasNavManagePermission = computed(() => {
 });
 
 const showApplyButton = computed(() => {
-  // 开发者不显示申请按钮
   if (currentRole.value === 'developer') return false;
-  // 管理员和普通用户始终显示按钮（有权限时显示"权限已开放"）
   return true;
 });
 
-// 当前申请记录（包含所有状态的申请）
 const currentApplication = computed(() => {
   if (!currentUserId.value) return null;
   return applications.value.find(app => 
@@ -343,52 +337,27 @@ const currentApplication = computed(() => {
   );
 });
 
-// 当前是否有待审批的申请
 const hasPendingApplication = computed(() => {
   return currentApplication.value?.status === 'pending';
 });
 
-// 申请提示信息
 const applyHintMessage = computed(() => {
-  // 有权限时不显示提示
   if (hasNavManagePermission.value) return null;
   
   const app = currentApplication.value;
   if (!app) return null;
   
-  // 待审批状态
   if (app.status === 'pending') {
     return { status: 'pending', text: '已提交权限申请待审批，可随时' };
-  }
-  
-  // 已驳回状态
-  if (app.status === 'rejected') {
-    return { status: 'rejected', text: '上次申请已被驳回，可' };
-  }
-  
-  // 已过期状态
-  if (app.status === 'expired') {
-    return { status: 'expired', text: '上次申请已过期，可' };
-  }
-  
-  // 已取消状态
-  if (app.status === 'cancelled') {
-    return { status: 'cancelled', text: '上次申请已取消，可' };
   }
   
   return null;
 });
 
-const showApplyRecord = computed(() => {
-  // 开发者不需要显示申请记录
-  if (currentRole.value === 'developer') return false;
-  return currentApplication.value !== null || !hasNavManagePermission.value;
-});
-
 const applyButtonDisabled = computed(() => {
   if (!showApplyButton.value) return true;
-  if (hasNavManagePermission.value) return true; // 已有权限
-  if (hasPendingApplication.value) return true; // 申请中
+  if (hasNavManagePermission.value) return true;
+  if (hasPendingApplication.value) return true;
   return false;
 });
 
@@ -399,20 +368,16 @@ const applyButtonText = computed(() => {
   return '申请权限';
 });
 
-const getPermissionName = (code: string) => {
-  return PERMISSION_CODES[code as keyof typeof PERMISSION_CODES]?.name || code;
-};
-
-const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    pending: '待审批',
-    approved: '已通过',
-    rejected: '已驳回',
-    expired: '已过期',
-    cancelled: '已取消'
-  };
-  return labels[status] || status;
-};
+const columns = computed(() => [
+  { key: 'id', label: 'ID', width: '0.5fr', class: 'id' },
+  { key: 'name', label: '导航名称', width: '1fr' },
+  { key: 'route', label: '导航路由', width: '1.5fr' },
+  { key: 'permission', label: '覆盖角色', width: '1.5fr' },
+  { key: 'status', label: '状态', width: '0.8fr', class: 'status-center' },
+  { key: 'created_at', label: '创建时间', width: '1.5fr' },
+  { key: 'updated_at', label: '最近修改时间', width: '1.5fr' },
+  { key: 'actions', label: '操作', width: '2fr', class: 'actions' }
+]);
 
 watch(isEditMode, (newVal) => {
   formErrors.name = '';
@@ -437,30 +402,6 @@ const confirmDialog = ref({
   onConfirm: undefined as (() => void) | undefined
 });
 
-const headerBgColor = computed(() => {
-  const color = themeColors.value.primary;
-  return hexToRgba(color, 0.2);
-});
-
-const filteredNavigations = computed(() => {
-  if (!searchKeyword.value.trim()) {
-    return navigations.value;
-  }
-  const keyword = searchKeyword.value.trim().toLowerCase();
-  return navigations.value.filter(nav => {
-    return nav.id.toString().includes(keyword) || 
-           nav.name.toLowerCase().includes(keyword);
-  });
-});
-
-const hexToRgba = (hex: string, alpha: number): string => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (result) {
-    return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${alpha})`;
-  }
-  return `rgba(100, 200, 255, ${alpha})`;
-};
-
 const getRoleLabel = (role: string): string => {
   const found = availableRoles.find(r => r.value === role);
   return found ? found.label : role;
@@ -468,8 +409,31 @@ const getRoleLabel = (role: string): string => {
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleString('zh-CN');
+  // 移除时区信息，将 UTC 时间当作本地时间处理
+  const localDateStr = dateStr.replace('Z', '').replace('T', ' ').slice(0, 16);
+  return localDateStr.replace(' ', ' ');
+};
+
+const formatRelativeTime = (dateStr: string) => {
+  if (!dateStr) return '-';
+  // 移除时区信息，将 UTC 时间当作本地时间处理
+  const localDateStr = dateStr.replace('Z', '').replace('T', ' ');
+  const date = new Date(localDateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.max(1, Math.floor(diffMs / (1000 * 60)));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffMinutes < 60) {
+    return `${diffMinutes}分钟之前`;
+  } else if (diffHours < 24) {
+    return `${diffHours}小时前`;
+  } else if (diffDays <= 7) {
+    return `${diffDays}天前`;
+  } else {
+    return '7天前';
+  }
 };
 
 const validateName = () => {
@@ -530,7 +494,6 @@ const validatePermission = () => {
 };
 
 const clearSearch = () => {
-  searchKeyword.value = '';
 };
 
 const goBack = () => {
@@ -592,7 +555,7 @@ const handleDeleteClick = (nav: Navigation) => {
   });
 };
 
-const fetchNavigations = async () => {
+const fetchNavigations = async (page = 1) => {
   const token = localStorage.getItem('token');
   if (!token) {
     error.value = '请先登录';
@@ -601,7 +564,7 @@ const fetchNavigations = async () => {
   }
 
   try {
-    const response = await fetch('http://localhost:3000/api/navigation/all', {
+    const response = await fetch(`http://localhost:3000/api/navigation/all?page=${page}&page_size=${PAGE_SIZE}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -612,6 +575,7 @@ const fetchNavigations = async () => {
     if (response.ok) {
       const data = await response.json();
       navigations.value = data.navigations || [];
+      totalNavigations.value = data.pagination?.total || 0;
     } else {
       const errData = await response.json();
       error.value = errData.error || '获取导航列表失败';
@@ -621,6 +585,11 @@ const fetchNavigations = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page;
+  fetchNavigations(page);
 };
 
 const validateForm = (): boolean => {
@@ -661,7 +630,6 @@ const handleSaveClick = () => {
 };
 
 const saveNavigation = async () => {
-
   isSaving.value = true;
   const token = localStorage.getItem('token');
   
@@ -942,73 +910,6 @@ const handleCancelApplication = () => {
   background: transparent;
 }
 
-.search-container {
-  display: flex;
-  justify-content: flex-start;
-  margin-bottom: 15px;
-}
-
-.search-box {
-  display: flex;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid v-bind('themeColors.primary');
-  border-radius: 0;
-  padding: 8px 16px;
-  width: 300px;
-  transition: all 0.3s ease;
-}
-
-.search-box:focus-within {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.search-icon {
-  width: 18px;
-  height: 18px;
-  color: v-bind('themeColors.secondary');
-  margin-right: 10px;
-}
-
-.search-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: v-bind('themeColors.primary');
-  font-size: 14px;
-  font-family: 'Rajdhani', sans-serif;
-}
-
-.search-input::placeholder {
-  color: v-bind('themeColors.secondary');
-  opacity: 0.6;
-}
-
-.search-clear {
-  width: 20px;
-  height: 20px;
-  background: transparent;
-  border: none;
-  color: v-bind('themeColors.secondary');
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin-left: 8px;
-  transition: color 0.2s ease;
-}
-
-.search-clear:hover {
-  color: v-bind('themeColors.primary');
-}
-
-.search-clear svg {
-  width: 14px;
-  height: 14px;
-}
-
 .apply-btn {
   margin-left: 20px;
   padding: 8px 20px;
@@ -1034,13 +935,13 @@ const handleCancelApplication = () => {
 }
 
 .apply-hint {
-  margin-bottom: 15px;
   padding: 10px 15px;
   background: rgba(234, 179, 8, 0.1);
   border-left: 3px solid #eab308;
   display: flex;
   align-items: center;
   gap: 5px;
+  margin: 0;
 }
 
 .hint-text {
@@ -1067,41 +968,6 @@ const handleCancelApplication = () => {
   font-size: 12px;
   font-weight: 600;
   font-family: 'Rajdhani', sans-serif;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: #888888;
-  font-size: 16px;
-  font-family: 'Rajdhani', sans-serif;
-}
-
-.nav-header {
-  display: grid;
-  grid-template-columns: 0.5fr 1fr 1.5fr 1.5fr 0.8fr 1.5fr 1.5fr 2fr;
-  padding: 15px 20px;
-  font-weight: 600;
-  color: v-bind('themeColors.primary');
-  text-align: left;
-  border-bottom: 1px solid v-bind('themeColors.primary');
-}
-
-.header-item {
-  font-family: 'Rajdhani', sans-serif;
-}
-
-.nav-row {
-  display: grid;
-  grid-template-columns: 0.5fr 1fr 1.5fr 1.5fr 0.8fr 1.5fr 1.5fr 2fr;
-  padding: 10px 20px;
-  border-bottom: 1px solid v-bind('themeColors.primary');
-  align-items: center;
-  transition: background-color 0.3s ease;
-}
-
-.nav-row:hover {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .nav-item {
@@ -1149,21 +1015,39 @@ const handleCancelApplication = () => {
   color: #ffffff;
 }
 
-.status-badge {
-  padding: 4px 12px;
-  border-radius: 0;
-  font-size: 12px;
-  font-weight: 600;
+.status-dot {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
 }
 
-.status-badge.enabled {
-  background: rgba(52, 211, 153, 0.2);
-  color: #34d399;
+.status-dot.enabled {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc66 30%, #00aa55 60%, #00ff88 100%);
+  animation: green-pulse 3s ease-in-out infinite;
 }
 
-.status-badge.disabled {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+.status-dot.disabled {
+  background: linear-gradient(135deg, #ff3366 0%, #ff0055 30%, #cc0044 60%, #ff3366 100%);
+  animation: red-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes green-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.7), 0 0 30px rgba(0, 204, 102, 0.5), 0 0 45px rgba(0, 170, 85, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.9), 0 0 60px rgba(0, 204, 102, 0.7), 0 0 90px rgba(0, 170, 85, 0.5);
+  }
+}
+
+@keyframes red-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.7), 0 0 30px rgba(255, 0, 85, 0.5), 0 0 45px rgba(204, 0, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 51, 102, 0.9), 0 0 60px rgba(255, 0, 85, 0.7), 0 0 90px rgba(204, 0, 68, 0.5);
+  }
 }
 
 .nav-item.actions {
@@ -1173,44 +1057,71 @@ const handleCancelApplication = () => {
 }
 
 .action-btn {
-  padding: 6px 12px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 0;
-  font-size: 12px;
-  font-weight: 600;
+  background: transparent !important;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
-  font-family: 'Rajdhani', sans-serif;
+  overflow: visible;
+}
+
+.action-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.action-btn .tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  padding: 4px 10px;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.action-btn:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .action-btn.edit {
-  background: rgba(59, 130, 246, 0.2);
   color: #3b82f6;
 }
 
 .action-btn.edit:hover {
-  background: rgba(59, 130, 246, 0.4);
+  background: transparent;
 }
 
 .action-btn.status {
-  background: rgba(239, 68, 68, 0.2);
   color: #ef4444;
 }
 
 .action-btn.status.disabled {
-  background: rgba(52, 211, 153, 0.2);
   color: #34d399;
 }
 
 .action-btn.delete {
-  background: rgba(220, 38, 38, 0.2);
   color: #dc2626;
 }
 
 .action-btn.delete:hover {
-  background: rgba(220, 38, 38, 0.4);
+  background: transparent;
 }
 
 .form-card {
@@ -1288,52 +1199,80 @@ const handleCancelApplication = () => {
   display: block;
 }
 
-.permission-selector {
+.permission-tags-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 10px;
 }
 
-.permission-checkbox {
+.permission-tag-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.05);
   cursor: pointer;
-}
-
-.permission-checkbox input {
-  display: none;
-}
-
-.checkbox-custom {
-  width: 18px;
-  height: 18px;
-  border: 1px solid v-bind('themeColors.primary');
-  border-radius: 0;
+  transition: background-color 0.3s ease;
+  width: 120px;
+  flex-shrink: 0;
+  box-sizing: border-box;
   position: relative;
-  transition: all 0.3s ease;
+  height: 35px;
+  line-height: 24px;
 }
 
-.permission-checkbox input:checked + .checkbox-custom {
-  background: v-bind('themeColors.primary');
-}
-
-.permission-checkbox input:checked + .checkbox-custom::after {
+.permission-tag-item::before {
   content: '';
   position: absolute;
-  left: 6px;
-  top: 2px;
-  width: 5px;
-  height: 10px;
-  border: solid #000;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid #5d5f61;
+  pointer-events: none;
+  transition: border-color 0.3s ease;
 }
 
-.checkbox-label {
+.permission-tag-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.permission-tag-item:hover::before {
+  border-color: v-bind('themeColors.primary');
+}
+
+.permission-tag-item.selected {
+  background: rgba(52, 211, 153, 0.2);
+}
+
+.permission-tag-item.selected::before {
+  border-color: #34d399;
+}
+
+.tag-name {
   color: v-bind('themeColors.secondary');
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 600;
   font-family: 'Rajdhani', sans-serif;
+}
+
+.permission-tag-item.selected .tag-name {
+  color: #34d399;
+}
+
+.tag-check {
+  color: #34d399;
+  font-size: 14px;
+  font-weight: bold;
+  margin-left: 8px;
+  width: 16px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tag-check.visible {
+  opacity: 1;
 }
 
 .status-selector {
@@ -1341,22 +1280,45 @@ const handleCancelApplication = () => {
   gap: 30px;
 }
 
-.status-option {
+.status-toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.status-option input {
+.status-toggle .status-dot {
   width: 16px;
   height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.2);
 }
 
-.status-option span {
-  color: v-bind('themeColors.secondary');
-  font-size: 14px;
+.status-toggle.active.enabled .status-dot {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc66 30%, #00aa55 60%, #00ff88 100%);
+  animation: green-pulse 1.5s ease-in-out infinite;
+}
+
+.status-toggle.active.disabled .status-dot {
+  background: linear-gradient(135deg, #ff3366 0%, #ff0055 30%, #cc0044 60%, #ff3366 100%);
+  animation: red-pulse 1.5s ease-in-out infinite;
+}
+
+.status-toggle .status-text {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 600;
   font-family: 'Rajdhani', sans-serif;
+}
+
+.status-toggle.active.enabled .status-text {
+  color: #34d399;
+}
+
+.status-toggle.active.disabled .status-text {
+  color: #ef4444;
 }
 
 .form-actions {
@@ -1452,17 +1414,6 @@ const handleCancelApplication = () => {
 @media (max-width: 768px) {
   .main-content {
     padding: 15px 20px;
-  }
-
-  .nav-header,
-  .nav-row {
-    grid-template-columns: 1fr 2fr;
-    gap: 10px;
-  }
-
-  .nav-item.actions {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
   }
 }
 </style>

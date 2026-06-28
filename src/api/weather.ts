@@ -1,14 +1,16 @@
+import request from '@/utils/request';
+
 export interface WeatherData {
   city: string;
   temperature: number;
   condition: string;
   humidity: number;
-  windDirection: string;     // 新增：风向
-  windPower: string;         // 新增：风力等级
+  windDirection: string;
+  windPower: string;
   windSpeed: number;
   icon: string;
-  updateTime: string;        // 新增：更新时间
-  source: string;            // 新增：数据来源
+  updateTime: string;
+  source: string;
 }
 
 export interface LocationData {
@@ -16,7 +18,6 @@ export interface LocationData {
   longitude: number;
 }
 
-// 获取用户当前位置
 export const getCurrentLocation = (): Promise<LocationData> => {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -49,7 +50,7 @@ export const getCurrentLocation = (): Promise<LocationData> => {
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 300000 // 5分钟缓存
+        maximumAge: 300000
       }
     );
   });
@@ -63,19 +64,17 @@ export const getWeather = async (options?: {
   if (options?.lat) params.append('lat', options.lat.toString());
   if (options?.lon) params.append('lon', options.lon.toString());
 
-  const response = await fetch(
-    `http://localhost:3000/api/weather?${params.toString()}`
+  const data = await request<WeatherData>(
+    `/api/weather?${params.toString()}`,
+    {
+      method: 'GET',
+      auth: false,
+    }
   );
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || '获取天气信息失败');
-  }
-
-  return await response.json();
+  return data;
 };
 
-// 自动获取位置并查询天气
 export const getWeatherWithLocation = async (): Promise<WeatherData> => {
   try {
     const location = await getCurrentLocation();
@@ -84,13 +83,11 @@ export const getWeatherWithLocation = async (): Promise<WeatherData> => {
       lon: location.longitude
     });
   } catch (error) {
-    // 如果获取位置失败，使用默认位置（北京）
     console.warn('获取位置失败，使用默认位置:', error);
     return await getWeather();
   }
 };
 
-// 天气预报数据接口（预留）
 export interface WeatherForecast {
   date: string;
   dayWeather: string;
@@ -102,21 +99,19 @@ export interface WeatherForecast {
   week: string;
 }
 
-// 获取天气预报（预留接口）
 export const getWeatherForecast = async (options?: {
   city?: string;
 }): Promise<WeatherForecast[]> => {
   const params = new URLSearchParams();
   if (options?.city) params.append('city', options.city);
 
-  const response = await fetch(
-    `http://localhost:3000/api/weather/forecast?${params.toString()}`
+  const data = await request<WeatherForecast[]>(
+    `/api/weather/forecast?${params.toString()}`,
+    {
+      method: 'GET',
+      auth: false,
+    }
   );
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || '获取天气预报失败');
-  }
-
-  return await response.json();
+  return data;
 };
